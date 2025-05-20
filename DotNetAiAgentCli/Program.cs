@@ -3,21 +3,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using Anthropic.SDK;
 
-namespace AnthropicAgent
+namespace DotNetAiAgentCli
 {
-    class Program
+    public static class Program
     {
-        static async Task Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var client = new AnthropicClient();
-
-            Func<(string, bool)> getUserMessage = () =>
-            {
-                string? input = Console.ReadLine();
-                return input != null ? (input, true) : (string.Empty, false);
-            };
-
-            var agent = new Agent(client, getUserMessage);
+            var agent = new Agent(client, GetUserMessage);
 
             try
             {
@@ -27,10 +20,18 @@ namespace AnthropicAgent
             {
                 Console.WriteLine($"Error: {ex.Message}");
             }
+
+            return;
+
+            (string, bool) GetUserMessage()
+            {
+                var input = Console.ReadLine();
+                return input != null ? (input, true) : (string.Empty, false);
+            }
         }
     }
 
-    class Agent
+    public class Agent
     {
         private readonly AnthropicClient _client;
         private readonly Func<(string message, bool success)> _getUserMessage;
@@ -43,8 +44,8 @@ namespace AnthropicAgent
 
         public async Task RunAsync(CancellationToken cancellationToken)
         {
-            // Implementation would go here
-            // This part was missing from the original Go code
+            // Implementation would go here.
+            // This part was missing from the original Go code.
         }
     }
 }
