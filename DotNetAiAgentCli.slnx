@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".gitignore" />
+    <File Path="LICENSE" />
+    <File Path="main.go" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="DotNetAiAgentCli/DotNetAiAgentCli.csproj" />
+</Solution>
