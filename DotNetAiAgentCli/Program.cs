@@ -1,104 +1,113 @@
-﻿using System;
+﻿// import (
+//     "bufio"
+//     "context"
+//     "fmt"
+//     "os"
+//     "github.com/anthropics/anthropic-sdk-go"
+// )
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Anthropic.SDK;
+using Anthropic.SDK.Constants;
 using Anthropic.SDK.Messaging;
 
+// package main
 namespace DotNetAiAgentCli
 {
     public static class Program
     {
-        public static async Task Main(string[] args)
+        private const string Welcome = "\e[94mThis is a REPL in C#/.NET with the Anthropic (Claude) API.\e[0m";
+        private const string Prompt = "\e[95m? \e[96m(press \e[93mENTER \e[96mor \e[93mCTRL+C \e[96mto exit): \e[0m";
+
+        // func main() {
+        public static async Task Main()
         {
-            var client = new AnthropicClient();
-            var agent = new Agent(client, GetUserMessage);
+            // client := anthropic.NewClient()
+            var anthropicClient = new AnthropicClient();
 
-            try
+            // conversation := []anthropic.MessageParam{}
+            var conversation = new List<Message>
             {
-                await agent.RunAsync(CancellationToken.None);
-            }
-            catch (Exception ex)
+                // new(RoleType.User, "Who won the world series in 2020?"),
+                // new(RoleType.Assistant, "The Los Angeles Dodgers won the World Series in 2020."),
+                // new(RoleType.User, "Where was it played?"),
+            };
+
+            // fmt.Println("Chat with Claude (use 'ctrl-c' to quit)")
+            Console.WriteLine(Welcome);
+
+            var messageParameters = new MessageParameters
             {
-                Console.WriteLine($"Error: {ex.Message}");
-            }
+                Messages = conversation,
+                MaxTokens = 1024,
+                Model = AnthropicModels.Claude37Sonnet,
+                Stream = true,
+                Temperature = 1.0m,
+            };
 
-            return;
-
-            (string, bool) GetUserMessage()
-            {
-                var input = Console.ReadLine();
-                return input != null ? (input, true) : (string.Empty, false);
-            }
-        }
-    }
-
-    public class Agent
-    {
-        private readonly AnthropicClient _client;
-        private readonly Func<(string message, bool success)> _getUserMessage;
-
-        public Agent(AnthropicClient client, Func<(string, bool)> getUserMessage)
-        {
-            _client = client;
-            _getUserMessage = getUserMessage;
-        }
-
-        public async Task RunAsync(CancellationToken cancellationToken)
-        {
-            var conversation = new List<MessageParam>();
-
-            Console.WriteLine("Chat with Claude (use 'ctrl-c' to quit)");
-
+            // for {
             while (true)
             {
-                Console.Write("\u001b[94mYou\u001b[0m: ");
-                var (userInput, ok) = _getUserMessage();
-                if (!ok)
-                {
-                    break;
-                }
+                // fmt.Print("\u001b[94mYou\u001b[0m: ")
+                Console.Write($"{Environment.NewLine}{Prompt}");
 
-                var userMessage = new UserMessage(new TextBlock(userInput));
-                conversation.Add(userMessage);
+                // userInput, ok := a.getUserMessage()
+                var input = Console.ReadLine();
+                Console.WriteLine();
 
-                var message = await RunInferenceAsync(conversation, cancellationToken);
-                if (message == null)
+                if (input == string.Empty)
                 {
+                    Console.WriteLine("\e[91mExiting...");
                     return;
                 }
 
-                conversation.Add(message.ToParam());
+                // userMessage := anthropic.NewUserMessage(anthropic.NewTextBlock(userInput))
+                var userMessage = new Message(RoleType.User, input);
 
-                foreach (var content in message.Content)
+                // conversation = append(conversation, userMessage)
+                conversation.Add(userMessage);
+
+                var responses = new List<MessageResponse>();
+
+                // message, err := a.runInference(ctx, conversation)
+                // if err != nil {
+                //     return err
+                // }
+                await foreach (var messageResponse in anthropicClient.Messages.StreamClaudeMessageAsync(messageParameters))
                 {
-                    switch (content.Type)
+                    // for _, content := range message.Content {
+                    //     switch content.Type {
+                    //         case "text":
+                    //         fmt.Printf("\u001b[93mClaude\u001b[0m: %s\n", content.Text)
+                    //     }
+                    // }
+
+                    if (messageResponse != null)
                     {
-                        case "text":
-                            Console.WriteLine($"\u001b[93mClaude\u001b[0m: {content.Text}");
-                            break;
+                        responses.Add(messageResponse);
+
+                        if (messageResponse.Delta != null)
+                        {
+                            Console.Write(messageResponse.Delta.Text);
+                        }
                     }
                 }
-            }
-        }
 
-        private async Task<Message?> RunInferenceAsync(List<MessageParam> conversation, CancellationToken cancellationToken)
-        {
-            try
-            {
-                var message = await _client.Messages.CreateAsync(new MessageCreateParams
-                {
-                    Model = "claude-3-7-sonnet-20250219", // Using the model identifier directly
-                    MaxTokens = 1024,
-                    Messages = conversation
-                }, cancellationToken);
+                var responseChars = responses
+                    .Where(r => r.Delta is { Text: not null })
+                    .SelectMany(r => r.Delta.Text)
+                    .ToArray();
 
-                return message;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Inference error: {ex.Message}");
-                return null;
+                var responseText = new string(responseChars);
+
+                var responseMessage = new Message(RoleType.Assistant, responseText);
+
+                conversation.Add(responseMessage);
+
+                Console.WriteLine();
             }
         }
     }
