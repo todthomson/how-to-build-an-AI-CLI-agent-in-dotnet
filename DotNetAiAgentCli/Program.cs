@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Anthropic; // You'll need to add the Anthropic C# SDK as a dependency
+using Anthropic.SDK;
 
 namespace AnthropicAgent
 {
