@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Anthropic.SDK;
+using Anthropic.SDK.Messaging;
 
 namespace DotNetAiAgentCli
 {
@@ -44,8 +46,60 @@ namespace DotNetAiAgentCli
 
         public async Task RunAsync(CancellationToken cancellationToken)
         {
-            // Implementation would go here.
-            // This part was missing from the original Go code.
+            var conversation = new List<MessageParam>();
+
+            Console.WriteLine("Chat with Claude (use 'ctrl-c' to quit)");
+
+            while (true)
+            {
+                Console.Write("\u001b[94mYou\u001b[0m: ");
+                var (userInput, ok) = _getUserMessage();
+                if (!ok)
+                {
+                    break;
+                }
+
+                var userMessage = new UserMessage(new TextBlock(userInput));
+                conversation.Add(userMessage);
+
+                var message = await RunInferenceAsync(conversation, cancellationToken);
+                if (message == null)
+                {
+                    return;
+                }
+
+                conversation.Add(message.ToParam());
+
+                foreach (var content in message.Content)
+                {
+                    switch (content.Type)
+                    {
+                        case "text":
+                            Console.WriteLine($"\u001b[93mClaude\u001b[0m: {content.Text}");
+                            break;
+                    }
+                }
+            }
+        }
+
+        private async Task<Message?> RunInferenceAsync(List<MessageParam> conversation, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var message = await _client.Messages.CreateAsync(new MessageCreateParams
+                {
+                    Model = "claude-3-7-sonnet-20250219", // Using the model identifier directly
+                    MaxTokens = 1024,
+                    Messages = conversation
+                }, cancellationToken);
+
+                return message;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Inference error: {ex.Message}");
+                return null;
+            }
         }
     }
 }
