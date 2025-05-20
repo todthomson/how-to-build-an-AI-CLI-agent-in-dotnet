@@ -1,9 +1,12 @@
-﻿namespace DotNetAiAgentCli;
+﻿using System;
 
-class Program
+namespace DotNetAiAgentCli
 {
-    static void Main(string[] args)
+    public static class Program
     {
-        Console.WriteLine("Hello, World!");
+        public static void Main(string[] args)
+        {
+            Console.WriteLine("Hello, World!");
+        }
     }
 }
