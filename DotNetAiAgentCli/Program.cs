@@ -10,7 +10,7 @@ namespace DotNetAiAgentCli
 {
     public static class Program
     {
-        private const string Welcome = "\e[94mThis is a REPL in C#/.NET with the Anthropic (Claude) API.\e[0m";
+        private const string Welcome = "\e[94mThis is a AI CLI REPL in C#/.NET using the Anthropic (Claude) API.\e[0m";
         private const string Prompt = "\e[95m? \e[96m(press \e[93mENTER \e[96mor \e[93mCTRL+C \e[96mto exit): \e[0m";
 
         public static async Task Main()
